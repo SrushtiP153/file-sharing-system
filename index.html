@@ -74,10 +74,11 @@
   </div>
 
   <!-- File Upload -->
-  <div class="upload-container">
-    <input type="file" id="fileInput" disabled>
-    <button onclick="uploadFile()">Upload File</button>
-  </div>
+  <div class="upload-container" id="uploadContainer" style="display:none;">
+  <input type="file" id="fileInput">
+  <button onclick="uploadFile()">Upload File</button>
+</div>
+
 
   <!-- File List -->
   <ul id="fileList"></ul>
@@ -132,12 +133,13 @@
     }
 
     auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('fileInput').disabled = false;
-      } else {
-        document.getElementById('fileInput').disabled = true;
-      }
-    });
+  const uploadContainer = document.getElementById('uploadContainer');
+  if (user) {
+    uploadContainer.style.display = 'inline-block'; // show after login
+  } else {
+    uploadContainer.style.display = 'none'; // hide when logged out
+  }
+});
 
     // ========== File Upload Functions ==========
     async function uploadFile() {
@@ -175,3 +177,4 @@
   </script>
 </body>
 </html>
+
