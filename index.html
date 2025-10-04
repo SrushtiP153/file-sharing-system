@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cloud File Sharing System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      text-align: center;
+      padding: 30px;
+    }
+    h2 {
+      color: #2a7ae2;
+    }
+    input, button {
+      margin: 5px;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #2a7ae2;
+      color: white;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: left;
+    }
+    li {
+      margin: 8px 0;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    a {
+      text-decoration: none;
+      color: #2a7ae2;
+      word-break: break-all;
+    }
+    button.deleteBtn {
+      background-color: red;
+      padding: 5px 10px;
+    }
+    .auth-container, .upload-container {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Cloud File Sharing System</h2>
+
+  <!-- Authentication -->
+  <div class="auth-container">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- File Upload -->
+  <div class="upload-container">
+    <input type="file" id="fileInput" disabled>
+    <button onclick="uploadFile()">Upload File</button>
+  </div>
+
+  <!-- File List -->
+  <ul id="fileList"></ul>
+
+  <!-- Firebase & Axios -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script>
+    // ========== Cloudinary Config ==========
+    const CLOUD_NAME = "dwyiqwxyj";
+    const UPLOAD_PRESET = "file_upload";  // replace
+
+    // ========== Firebase Config ==========
+    const firebaseConfig = {
+  apiKey: "AIzaSyAHkvt_LfOw7zCblKko0J3jcAkDSurA10w",
+  authDomain: "file-1-af406.firebaseapp.com",
+  projectId: "file-1-af406",
+  storageBucket: "file-1-af406.firebasestorage.app",
+  messagingSenderId: "906727095321",
+  appId: "1:906727095321:web:88136b976b78a65387be88",
+  measurementId: "G-F8LYXX20MB"
+};
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // ========== Authentication Functions ==========
+    function signup() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert('User Created!'))
+        .catch(err => alert(err.message));
+    }
+
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          alert('Logged In!');
+          document.getElementById('fileInput').disabled = false;
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function logout() {
+      auth.signOut();
+      alert('Logged Out!');
+      document.getElementById('fileInput').disabled = true;
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('fileInput').disabled = false;
+      } else {
+        document.getElementById('fileInput').disabled = true;
+      }
+    });
+
+    // ========== File Upload Functions ==========
+    async function uploadFile() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert('Choose a file first');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', UPLOAD_PRESET);
+
+      try {
+        const response = await axios.post(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+          formData
+        );
+        alert('File Uploaded Successfully!');
+        addFileToList(response.data.secure_url, file.name);
+      } catch (err) {
+        alert('Upload Failed: ' + err);
+      }
+    }
+
+    function addFileToList(url, name) {
+      const ul = document.getElementById('fileList');
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${url}" target="_blank">${name}</a>
+                      <button class="deleteBtn" onclick="deleteFile(this)">Delete</button>`;
+      ul.appendChild(li);
+    }
+
+    function deleteFile(btn) {
+      const li = btn.parentElement;
+      li.remove(); // removes from the list
+    }
+  </script>
+</body>
+</html>
