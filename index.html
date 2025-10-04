@@ -73,12 +73,11 @@
     <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- File Upload -->
+  <!-- File Upload (hidden until login) -->
   <div class="upload-container" id="uploadContainer" style="display:none;">
-  <input type="file" id="fileInput">
-  <button onclick="uploadFile()">Upload File</button>
-</div>
-
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload File</button>
+  </div>
 
   <!-- File List -->
   <ul id="fileList"></ul>
@@ -91,18 +90,18 @@
   <script>
     // ========== Cloudinary Config ==========
     const CLOUD_NAME = "dwyiqwxyj";
-    const UPLOAD_PRESET = "file_upload";  // replace
+    const UPLOAD_PRESET = "file_upload"; // replace with your preset
 
     // ========== Firebase Config ==========
     const firebaseConfig = {
-  apiKey: "AIzaSyAHkvt_LfOw7zCblKko0J3jcAkDSurA10w",
+      apiKey: "AIzaSyAHkvt_LfOw7zCblKko0J3jcAkDSurA10w",
   authDomain: "file-1-af406.firebaseapp.com",
   projectId: "file-1-af406",
   storageBucket: "file-1-af406.firebasestorage.app",
   messagingSenderId: "906727095321",
   appId: "1:906727095321:web:88136b976b78a65387be88",
   measurementId: "G-F8LYXX20MB"
-};
+    };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
@@ -121,7 +120,6 @@
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
           alert('Logged In!');
-          document.getElementById('fileInput').disabled = false;
         })
         .catch(err => alert(err.message));
     }
@@ -129,19 +127,30 @@
     function logout() {
       auth.signOut();
       alert('Logged Out!');
-      document.getElementById('fileInput').disabled = true;
+      document.getElementById('fileList').innerHTML = '';
     }
 
-    auth.onAuthStateChanged(user => {
-  const uploadContainer = document.getElementById('uploadContainer');
-  if (user) {
-    uploadContainer.style.display = 'inline-block'; // show after login
-  } else {
-    uploadContainer.style.display = 'none'; // hide when logged out
-  }
-});
+    // ========== Show/Hide Upload Section ==========
+    const uploadContainer = document.getElementById('uploadContainer');
 
-    // ========== File Upload Functions ==========
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        uploadContainer.style.display = 'inline-block';
+      } else {
+        uploadContainer.style.display = 'none';
+      }
+    });
+
+    // ========== File Functions ==========
+    const fileList = document.getElementById('fileList');
+
+    function addFileToList(url) {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${url}" target="_blank">${url.split('/').pop()}</a>
+                      <button class="deleteBtn" onclick="deleteFile(this)">Delete</button>`;
+      fileList.appendChild(li);
+    }
+
     async function uploadFile() {
       const file = document.getElementById('fileInput').files[0];
       if (!file) return alert('Choose a file first');
@@ -152,29 +161,20 @@
 
       try {
         const response = await axios.post(
-          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
           formData
         );
+        addFileToList(response.data.secure_url);
         alert('File Uploaded Successfully!');
-        addFileToList(response.data.secure_url, file.name);
       } catch (err) {
         alert('Upload Failed: ' + err);
       }
     }
 
-    function addFileToList(url, name) {
-      const ul = document.getElementById('fileList');
-      const li = document.createElement('li');
-      li.innerHTML = `<a href="${url}" target="_blank">${name}</a>
-                      <button class="deleteBtn" onclick="deleteFile(this)">Delete</button>`;
-      ul.appendChild(li);
-    }
-
     function deleteFile(btn) {
-      const li = btn.parentElement;
-      li.remove(); // removes from the list
+      btn.parentElement.remove(); // remove from page
+      // Note: for security, real deletion from Cloudinary requires backend API call
     }
   </script>
 </body>
 </html>
-
